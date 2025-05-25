@@ -1,5 +1,3 @@
-import { DOMParser } from '@edge-runtime/deno-dom'
-
 export const config = {
   runtime: 'edge',
 }
@@ -19,21 +17,25 @@ export default async function handler(req) {
     const response = await fetch(url)
     const html = await response.text()
 
-    const doc = new DOMParser().parseFromString(html, 'text/html')
-    if (!doc) {
-      throw new Error('Failed to parse HTML')
-    }
+    // 使用正则表达式提取元数据
+    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i)
+    const title = titleMatch ? titleMatch[1].trim() : ''
 
-    const title = doc.querySelector('title')?.textContent || ''
-    const description =
-      doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
-      doc.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
-      ''
-    const icon =
-      doc.querySelector('link[rel="icon"]')?.getAttribute('href') ||
-      doc.querySelector('link[rel="shortcut icon"]')?.getAttribute('href') ||
-      doc.querySelector('link[rel="apple-touch-icon"]')?.getAttribute('href') ||
-      ''
+    const descriptionMatch =
+      html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
+      html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']/i) ||
+      html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i) ||
+      html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*property=["']og:description["']/i)
+    const description = descriptionMatch ? descriptionMatch[1].trim() : ''
+
+    const iconMatch =
+      html.match(/<link[^>]*rel=["']icon["'][^>]*href=["']([^"']*)["']/i) ||
+      html.match(/<link[^>]*rel=["']shortcut icon["'][^>]*href=["']([^"']*)["']/i) ||
+      html.match(/<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']*)["']/i) ||
+      html.match(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']icon["']/i) ||
+      html.match(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']shortcut icon["']/i) ||
+      html.match(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']apple-touch-icon["']/i)
+    const icon = iconMatch ? iconMatch[1].trim() : ''
 
     const absoluteIcon = icon?.startsWith('http') ? icon : new URL(icon || '', url).href
 
