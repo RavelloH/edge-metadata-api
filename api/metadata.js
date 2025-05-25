@@ -9,11 +9,26 @@ export default async function handler(req) {
   if (!url) {
     return new Response(JSON.stringify({ error: 'Missing URL parameter' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     })
   }
 
   try {
+    // 先发送 HEAD 请求检查 Content-Type
+    const headResponse = await fetch(url, { method: 'HEAD' })
+    const contentType = headResponse.headers.get('content-type') || ''
+    
+    if (!contentType.includes('text/html')) {
+      return new Response(
+        JSON.stringify({ error: 'URL does not point to an HTML document', contentType }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        }
+      )
+    }
+
+    // 发送 GET 请求获取 HTML 内容
     const response = await fetch(url)
     const html = await response.text()
 
@@ -48,14 +63,14 @@ export default async function handler(req) {
 
     return new Response(JSON.stringify(result), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     })
   } catch (err) {
     return new Response(
       JSON.stringify({ error: 'Failed to fetch or parse the webpage', detail: String(err) }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
       }
     )
   }
