@@ -54,29 +54,11 @@ export default async function handler(req) {
 
     const absoluteIcon = icon?.startsWith('http') ? icon : new URL(icon || '', url).href
 
-    // 获取 icon 的 base64 数据
-    let iconBase64 = ''
-    if (absoluteIcon) {
-      try {
-        const iconResponse = await fetch(absoluteIcon)
-        if (iconResponse.ok) {
-          const iconBuffer = await iconResponse.arrayBuffer()
-          const iconContentType = iconResponse.headers.get('content-type') || 'image/png'
-          const base64Data = btoa(String.fromCharCode(...new Uint8Array(iconBuffer)))
-          iconBase64 = `data:${iconContentType};base64,${base64Data}`
-        }
-      } catch (iconError) {
-        // 图片获取失败时，iconBase64 保持为空字符串
-        console.warn('Failed to fetch icon:', iconError)
-      }
-    }
-
     const result = {
       url,
       title,
       description,
       icon: absoluteIcon,
-      iconBase64,
     }
 
     return new Response(JSON.stringify(result), {
